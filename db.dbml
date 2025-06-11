@@ -1,0 +1,67 @@
+Project chat_backend {
+  database_type: "PostgreSQL"
+  note: "Scalable chat app schema with JSONB support for media and user profile"
+}
+
+Table users {
+  id UUID [pk, default: gen_random_uuid()]
+  username text [unique, not null]
+  email text [unique, not null]
+  password_hash text [not null]
+  profile jsonb
+  created_at timestamp [default: now()]
+
+  Note: "profile is a JSONB object containing user details like full_name, bio, avatar_url, phone, etc."
+}
+
+Table chat_rooms {
+  id UUID [pk, default: gen_random_uuid()]
+  name text
+  is_group boolean [default: false, not null]
+  created_at timestamp [default: now()]
+}
+
+Table chat_room_members {
+  id UUID [pk, default: gen_random_uuid()]
+  room_id UUID [not null, ref: > chat_rooms.id]
+  user_id UUID [not null, ref: > users.id]
+  joined_at timestamp [default: now()]
+
+  Indexes {
+    (room_id, user_id) [unique]
+  }
+}
+
+Table messages {
+  id UUID [pk, default: gen_random_uuid()]
+  room_id UUID [not null, ref: > chat_rooms.id]
+  sender_id UUID [not null, ref: > users.id]
+  content text
+  media jsonb
+  created_at timestamp [default: now()]
+
+  Note: "media is a JSONB object containing file metadata: { name, is_public, key, url, size, mem_type }"
+}
+
+Table message_status {
+  id UUID [pk, default: gen_random_uuid()]
+  message_id UUID [not null, ref: > messages.id]
+  user_id UUID [not null, ref: > users.id]
+  delivered boolean [default: false]
+  read boolean [default: false]
+  updated_at timestamp [default: now()]
+
+  Indexes {
+    (message_id, user_id) [unique]
+  }
+}
+
+Table sessions {
+  id UUID [pk, default: gen_random_uuid()]
+  user_id UUID [not null, ref: > users.id]
+  refresh_token text [not null]
+  device text
+  ip_address text
+  expires_at timestamp
+  created_at timestamp [default: now()]
+}
