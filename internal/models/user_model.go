@@ -15,4 +15,5 @@ type User struct {
     PasswordHash string   `gorm:"not null"`
     Profile   datatypes.JSON `gorm:"type:jsonb"`
     CreatedAt time.Time  `gorm:"autoCreateTime"`
+    PublicKeys []UserPublicKey `gorm:"foreignKey:UserID"`
 }

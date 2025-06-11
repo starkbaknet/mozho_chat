@@ -1,13 +1,11 @@
 package user
 
 import (
-	"encoding/json"
 	"errors"
 	"mozho_chat/internal/models"
 	"mozho_chat/internal/repository"
 	"mozho_chat/internal/user/dto"
 	"mozho_chat/pkg/auth"
-	"gorm.io/datatypes"
 )
 
 type Service interface {
@@ -33,20 +31,10 @@ func (s *userService) Register(input dto.CreateUserRequest) (*dto.UserResponse, 
 		return nil, err
 	}
 
-	var profileJSON datatypes.JSON
-	if input.Profile != nil {
-		profileBytes, err := json.Marshal(input.Profile)
-		if err != nil {
-			return nil, err
-		}
-		profileJSON = profileBytes
-	}
-
 	user := models.User{
 		Username:     input.Username,
 		Email:        input.Email,
 		PasswordHash: hashed,
-		Profile:      profileJSON,
 	}
 
 	if err := s.repo.Create(&user); err != nil {
@@ -104,10 +92,6 @@ func (s *userService) UpdateProfile(userID string, input dto.UpdateUserRequest) 
     }
     if input.Email != nil {
         user.Email = *input.Email
-    }
-
-    if input.Profile != nil {
-        user.Profile = datatypes.JSON(*input.Profile)
     }
 
 	if err := s.repo.Update(user); err != nil {

@@ -1,11 +1,8 @@
 package dto
 
-import "encoding/json"
-
 type UpdateUserRequest struct {
     Username *string          `json:"username,omitempty"`
     Email    *string          `json:"email,omitempty"`
-    Profile  *json.RawMessage `json:"profile,omitempty"`
 }
 
 type UpdatePasswordRequest struct {
