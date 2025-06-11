@@ -5,11 +5,14 @@ import (
 	"gorm.io/gorm"
 	"mozho_chat/internal/repository"
 	"mozho_chat/internal/user"
+	"mozho_chat/internal/chatroom" 
 	"mozho_chat/pkg/middleware"
 )
 
 func SetupRouter(db *gorm.DB) *gin.Engine {
 	r := gin.Default()
+
+	r.Use(middleware.CORSMiddleware())
 
 	v1 := r.Group("/api/v1")
 
@@ -18,8 +21,10 @@ func SetupRouter(db *gorm.DB) *gin.Engine {
 	userHandler := user.NewHandler(userService)
 	userHandler.RegisterRoutes(v1)
 
-
-	r.Use(middleware.CORSMiddleware())
+	chatRoomRepo := repository.NewChatRoomRepository(db)
+	chatRoomService := chatroom.NewService(chatRoomRepo, userRepo)
+	chatRoomHandler := chatroom.NewHandler(chatRoomService)
+	chatRoomHandler.RegisterRoutes(v1)
 
 	return r
 }
