@@ -21,6 +21,8 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 		users.POST("/register", h.Register)
 		users.POST("/login", h.Login)
 		users.GET("/me", middleware.AuthMiddleware(), h.Profile)
+		users.PATCH("/me", middleware.AuthMiddleware(), h.UpdateProfile)
+		users.PATCH("/password", middleware.AuthMiddleware(), h.UpdatePassword)
 	}
 }
 
@@ -65,4 +67,39 @@ func (h *Handler) Profile(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, res)
+}
+
+func (h *Handler) UpdateProfile(c *gin.Context) {
+	userID := c.GetString("user_id")
+
+	var req dto.UpdateUserRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	updated, err := h.service.UpdateProfile(userID, req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, updated)
+}
+
+func (h *Handler) UpdatePassword(c *gin.Context) {
+	userID := c.GetString("user_id")
+
+	var req dto.UpdatePasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := h.service.UpdatePassword(userID, req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "password updated successfully"})
 }

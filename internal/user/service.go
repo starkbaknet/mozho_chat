@@ -14,6 +14,9 @@ type Service interface {
 	Register(input dto.CreateUserRequest) (*dto.UserResponse, error)
 	Login(input dto.LoginRequest) (string, error)
 	GetProfile(userID string) (*dto.UserResponse, error)
+
+	UpdateProfile(userID string, input dto.UpdateUserRequest) (*dto.UserResponse, error)
+	UpdatePassword(userID string, input dto.UpdatePasswordRequest) error
 }
 
 type userService struct {
@@ -88,4 +91,55 @@ func (s *userService) GetProfile(userID string) (*dto.UserResponse, error) {
 		Email:    user.Email,
 		Profile:  user.Profile,
 	}, nil
+}
+
+func (s *userService) UpdateProfile(userID string, input dto.UpdateUserRequest) (*dto.UserResponse, error) {
+    user, err := s.repo.FindByID(userID)
+	if err != nil {
+        return nil, err
+    }
+
+    if input.Username != nil {
+        user.Username = *input.Username
+    }
+    if input.Email != nil {
+        user.Email = *input.Email
+    }
+
+    if input.Profile != nil {
+        user.Profile = datatypes.JSON(*input.Profile)
+    }
+
+	if err := s.repo.Update(user); err != nil {
+        return nil, err
+    }
+
+    return &dto.UserResponse{
+        ID:       user.ID.String(),
+        Username: user.Username,
+        Email:    user.Email,
+        Profile:  user.Profile,
+    }, nil
+}
+
+func (s *userService) UpdatePassword(userID string, input dto.UpdatePasswordRequest) error {
+	user, err := s.repo.FindByID(userID)
+	if err != nil {
+		return err
+	}
+
+	// Verify current password
+	if err := auth.CheckPasswordHash(input.CurrentPassword, user.PasswordHash); err != nil {
+		return errors.New("current password is incorrect")
+	}
+
+	// Hash new password
+	hashed, err := auth.HashPassword(input.NewPassword)
+	if err != nil {
+		return err
+	}
+
+	user.PasswordHash = hashed
+
+	return s.repo.Update(user)
 }
