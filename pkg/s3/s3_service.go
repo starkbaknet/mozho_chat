@@ -62,6 +62,7 @@ func NewS3Service() (*S3Service, error) {
 			return aws.Endpoint{
 				URL:           os.Getenv("S3_ENDPOINT"),
 				SigningRegion: os.Getenv("S3_REGION"),
+				HostnameImmutable: true,
 			}, nil
 		})),
 	)
@@ -69,7 +70,11 @@ func NewS3Service() (*S3Service, error) {
 		return nil, err
 	}
 
-	client := s3.NewFromConfig(cfg)
+	client := s3.NewFromConfig(cfg, func(o *s3.Options) {
+		if os.Getenv("IS_MINIO") == "true" {
+			o.UsePathStyle = true
+		}
+	})
 	presigner := s3.NewPresignClient(client)
 
 	return &S3Service{

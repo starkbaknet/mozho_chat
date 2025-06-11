@@ -21,6 +21,8 @@ type Service interface {
 	MarkAsRead(userID, messageID string) error
 	MarkMessageRead(userID, messageID string) error
 	MarkMessageUnread(userID, messageID string) error
+	MarkMessageDelivered(userID, messageID string) error
+	MarkMessageUndelivered(userID, messageID string) error
 	GenerateAESKey() (string, error)
 }
 
@@ -109,6 +111,14 @@ func (s *messageService) MarkMessageRead(userID, messageID string) error {
 
 func (s *messageService) MarkMessageUnread(userID, messageID string) error {
 	return s.repo.MarkUnread(userID, messageID)
+}
+
+func (s *messageService) MarkMessageDelivered(userID, messageID string) error {
+	return s.repo.MarkDelivered(userID, messageID)
+}
+
+func (s *messageService) MarkMessageUndelivered(userID, messageID string) error {
+	return s.repo.MarkUndelivered(userID, messageID)
 }
 
 func (s *messageService) GenerateAESKey() (string, error) {

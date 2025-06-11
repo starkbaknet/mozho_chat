@@ -25,6 +25,8 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 		messages.GET("/:chat_room_id", h.GetMessages)
 		messages.POST("/:message_id/read", h.MarkRead)
 		messages.POST("/:message_id/unread", h.MarkUnread)
+		messages.POST("/:message_id/delivered", h.MarkDelivered)
+		messages.POST("/:message_id/undelivered", h.MarkUndelivered)
 		messages.POST("/generate-key", h.GenerateKey)
 	}
 }
@@ -100,6 +102,28 @@ func (h *Handler) MarkUnread(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "marked as unread"})
+}
+
+func (h *Handler) MarkDelivered(c *gin.Context) {
+	userID := c.GetString("user_id")
+	messageID := c.Param("message_id")
+
+	if err := h.service.MarkMessageDelivered(userID, messageID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "marked as delivered"})
+}
+
+func (h *Handler) MarkUndelivered(c *gin.Context) {
+	userID := c.GetString("user_id")
+	messageID := c.Param("message_id")
+
+	if err := h.service.MarkMessageUndelivered(userID, messageID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "marked as undelivered"})
 }
 
 func (h *Handler) GenerateKey(c *gin.Context) {

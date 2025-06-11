@@ -5,6 +5,7 @@ import (
 	"context"
 	"mozho_chat/internal/models"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -13,6 +14,8 @@ type MessageRepository interface {
 	FindByChatRoom(chatRoomID string, limit, offset int) ([]models.Message, error)
 	MarkRead(userID, messageID string) error
 	MarkUnread(userID, messageID string) error
+	MarkDelivered(userID, messageID string) error
+	MarkUndelivered(userID, messageID string) error
 }
 
 type messageRepository struct {
@@ -39,14 +42,44 @@ func (r *messageRepository) FindByChatRoom(chatRoomID string, limit, offset int)
 }
 
 func (r *messageRepository) MarkRead(userID, messageID string) error {
-	return r.db.Model(&models.MessageStatus{}).
+	status := &models.MessageStatus{
+		UserID:    mustParseUUID(userID),
+		MessageID: mustParseUUID(messageID),
+	}
+	return r.db.
 		Where("user_id = ? AND message_id = ?", userID, messageID).
 		Assign(models.MessageStatus{Read: true}).
-		FirstOrCreate(&models.MessageStatus{}).Error
+		FirstOrCreate(status).Error
 }
 
 func (r *messageRepository) MarkUnread(userID, messageID string) error {
 	return r.db.Model(&models.MessageStatus{}).
 		Where("user_id = ? AND message_id = ?", userID, messageID).
 		Update("read", false).Error
+}
+
+func (r *messageRepository) MarkDelivered(userID, messageID string) error {
+	status := &models.MessageStatus{
+		UserID:    mustParseUUID(userID),
+		MessageID: mustParseUUID(messageID),
+	}
+	return r.db.
+		Where("user_id = ? AND message_id = ?", userID, messageID).
+		Assign(models.MessageStatus{Delivered: true}).
+		FirstOrCreate(status).Error
+}
+
+func (r *messageRepository) MarkUndelivered(userID, messageID string) error {
+	return r.db.Model(&models.MessageStatus{}).
+		Where("user_id = ? AND message_id = ?", userID, messageID).
+		Update("delivered", false).Error
+}
+
+// Helper function to parse UUID from string
+func mustParseUUID(s string) uuid.UUID {
+	id, err := uuid.Parse(s)
+	if err != nil {
+		panic("invalid UUID: " + s)
+	}
+	return id
 }
